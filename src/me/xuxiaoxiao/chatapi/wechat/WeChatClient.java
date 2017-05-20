@@ -1,13 +1,15 @@
 package me.xuxiaoxiao.chatapi.wechat;
 
+import me.xuxiaoxiao.chatapi.wechat.entity.AddMsg;
+import me.xuxiaoxiao.chatapi.wechat.entity.User;
 import me.xuxiaoxiao.chatapi.wechat.protocol.ReqBatchGetContact.Contact;
 import me.xuxiaoxiao.chatapi.wechat.protocol.*;
-import me.xuxiaoxiao.chatapi.wechat.protocol.RspInit.User;
 import me.xuxiaoxiao.xtools.XTools;
 
 import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 public final class WeChatClient {
@@ -54,16 +56,32 @@ public final class WeChatClient {
         return wxContacts.getMe();
     }
 
-    public ArrayList<User> friends() {
+    public User uFriend(String userName) {
+        return wxContacts.getFriend(userName);
+    }
+
+    public ArrayList<User> uFriends() {
         return wxContacts.getFriends();
     }
 
-    public ArrayList<User> publics() {
+    public User uPublic(String userName) {
+        return wxContacts.getPublic(userName);
+    }
+
+    public ArrayList<User> uPublics() {
         return wxContacts.getPublics();
     }
 
-    public ArrayList<User> chatrooms() {
+    public User uChatroom(String userName) {
+        return wxContacts.getChatroom(userName);
+    }
+
+    public ArrayList<User> uChatrooms() {
         return wxContacts.getCharrooms();
+    }
+
+    public User contact(String userName) {
+        return wxContacts.getContact(userName);
     }
 
     public void sendTextMsg(String toUserName, String msgContent) {
@@ -80,7 +98,11 @@ public final class WeChatClient {
 
         void onLogin();
 
-        void onMessage(RspSync.AddMsg addMsg);
+        void onMessage(AddMsg addMsg);
+
+        void onNotify(AddMsg addMsg);
+
+        void onSystem(AddMsg addMsg);
 
         void onLogout();
     }
@@ -131,7 +153,7 @@ public final class WeChatClient {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return LOGIN_EXCEPTION;
+                return e.toString() + Arrays.toString(e.getStackTrace());
             }
         }
 
@@ -157,7 +179,7 @@ public final class WeChatClient {
                 ArrayList<Contact> contacts = new ArrayList<>();
                 if (rspInit.ContactList != null) {
                     for (User user : rspInit.ContactList) {
-                        if (user.UserName.startsWith("@@")) {
+                        if (user.UserName.startsWith("@")) {
                             Contact item = new Contact(user.UserName, "");
                             contacts.add(item);
                         }
@@ -167,34 +189,25 @@ public final class WeChatClient {
                 return null;
             } catch (Exception e) {
                 e.printStackTrace();
-                return INIT_EXCEPTION;
+                return e.toString() + Arrays.toString(e.getStackTrace());
             }
         }
 
         private String listen() {
             try {
+                wxAPI.webwxstatusnotify(me().UserName);
                 while (!isInterrupted()) {
                     RspSyncCheck rspSyncCheck = wxAPI.synccheck();
                     if (rspSyncCheck.retcode > 0) {
                         return null;
                     } else if (rspSyncCheck.selector > 0) {
                         RspSync rspSync = wxAPI.webwxsync();
-                        if (rspSync.AddMsgList != null) {
-                            for (RspSync.AddMsg addMsg : rspSync.AddMsgList) {
-                                if (addMsg.FromUserName.startsWith("@@") && wxContacts.getChatroom(addMsg.FromUserName) == null) {
-                                    ArrayList<Contact> contacts = new ArrayList<>();
-                                    contacts.add(new Contact(addMsg.FromUserName, ""));
-                                    wxContacts.loadContacts(contacts);
-                                }
-                                wxListener.onMessage(addMsg);
-                            }
-                        }
-                        if (rspSync.ModContactList != null) {
+                        if (rspSync.ModContactList != null) {//被拉入群第一条消息，群里有人加入,群里踢人之后第一条信息，添加好友
                             for (User user : rspSync.ModContactList) {
                                 wxContacts.addContact(user);
                             }
                         }
-                        if (rspSync.DelContactList != null) {
+                        if (rspSync.DelContactList != null) {//删除好友，删除群后的任意一条消息
                             for (User user : rspSync.DelContactList) {
                                 wxContacts.rmvContact(user.UserName);
                             }
@@ -204,16 +217,40 @@ public final class WeChatClient {
                                 wxContacts.addContact(user);
                             }
                         }
-                    }
-                    if (System.currentTimeMillis() - wxAPI.lastNotify > 5 * 60 * 1000) {
-                        wxAPI.webwxstatusnotify(wxContacts.getMe().UserName);
-                        wxAPI.lastNotify = System.currentTimeMillis();
+                        if (rspSync.AddMsgList != null) {
+                            for (AddMsg addMsg : rspSync.AddMsgList) {
+                                switch (addMsg.MsgType) {
+                                    case WeChatTools.TYPE_NOTIFY:
+                                        ArrayList<Contact> contacts = new ArrayList<>();
+                                        for (String contact : addMsg.StatusNotifyUserName.split(",")) {
+                                            if (wxContacts.getContact(contact) == null && contact.startsWith("@")) {
+                                                contacts.add(new Contact(contact, ""));
+                                                if (contacts.size() >= 50) {
+                                                    wxContacts.loadContacts(contacts);
+                                                    contacts.clear();
+                                                }
+                                            }
+                                        }
+                                        if (contacts.size() > 0) {
+                                            wxContacts.loadContacts(contacts);
+                                        }
+                                        wxListener.onNotify(addMsg);
+                                        break;
+                                    case WeChatTools.TYPE_SYSTEM:
+                                        wxListener.onSystem(addMsg);
+                                        break;
+                                    default:
+                                        wxListener.onMessage(addMsg);
+                                        break;
+                                }
+                            }
+                        }
                     }
                 }
                 return null;
             } catch (Exception e) {
                 e.printStackTrace();
-                return LISTEN_EXCEPTION;
+                return e.toString() + Arrays.toString(e.getStackTrace());
             }
         }
     }

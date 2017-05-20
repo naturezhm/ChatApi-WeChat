@@ -11,25 +11,22 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-class WeChatApi {
-    public static final String HOST_V1 = "wx.qq.com";
-    public static final String HOST_V2 = "wx2.qq.com";
+final class WeChatApi {
+    private static final String HOST_V1 = "wx.qq.com";
+    private static final String HOST_V2 = "wx2.qq.com";
 
-    public final long TIME_INIT = System.currentTimeMillis();
-    public final AtomicBoolean FIRST_LOGIN = new AtomicBoolean(true);
+    private final long TIME_INIT = System.currentTimeMillis();
+    private final AtomicBoolean FIRST_LOGIN = new AtomicBoolean(true);
+    String uin;
+    String sid;
+    private long time = TIME_INIT;
+    private String host;
+    private String uuid;
+    private String skey;
+    private String passticket;
+    private RspInit.SyncKey synckey;
 
-    public long lastNotify = 0;
-    public long time = TIME_INIT;
-    public String host;
-
-    public String uuid;
-    public String uin;
-    public String sid;
-    public String skey;
-    public String passticket;
-    public RspInit.SyncKey synckey;
-
-    public String jslogin() {
+    String jslogin() {
         XUrl xUrl = XUrl.base("https://login.wx.qq.com/jslogin");
         xUrl.param("_", time++);
         xUrl.param("appid", "wx782c26e4c19acffb");
@@ -37,12 +34,16 @@ class WeChatApi {
         xUrl.param("lang", "zh_CN");
         xUrl.param("redirect_uri", "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxnewloginpage");
         String rspStr = WeChatTools.request(xUrl, null, "\".+\"");
-        this.uuid = rspStr.substring(rspStr.indexOf('"') + 1, rspStr.lastIndexOf('"'));
-        WeChatTools.LOGGER.info("登录二维码为：" + "https://login.weixin.qq.com/qrcode/" + uuid);
-        return "https://login.weixin.qq.com/qrcode/" + uuid;
+        if (XTools.strEmpty(rspStr)) {
+            throw new RuntimeException("获取登录二维码出错，请检查https相关设置");
+        } else {
+            this.uuid = rspStr.substring(rspStr.indexOf('"') + 1, rspStr.lastIndexOf('"'));
+            WeChatTools.LOGGER.info("登录二维码为：" + "https://login.weixin.qq.com/qrcode/" + uuid);
+            return "https://login.weixin.qq.com/qrcode/" + uuid;
+        }
     }
 
-    public RspLogin login() {
+    RspLogin login() {
         XUrl xUrl = XUrl.base("https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login");
         xUrl.param("_", time++);
         xUrl.param("loginicon", true);
@@ -61,7 +62,7 @@ class WeChatApi {
         return rspLogin;
     }
 
-    public void webwxnewloginpage(String url) {
+    void webwxnewloginpage(String url) {
         String rspStr = XTools.http(XUrl.base(url)).string();
         if (!XTools.strEmpty(rspStr) && Pattern.compile("<error>.+</error>").matcher(rspStr).find()) {
             this.uin = rspStr.substring(rspStr.indexOf("<wxuin>") + "<wxuin>".length(), rspStr.indexOf("</wxuin>"));
@@ -72,7 +73,7 @@ class WeChatApi {
         }
     }
 
-    public RspInit webwxinit() {
+    RspInit webwxinit() {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxinit", host));
         xUrl.param("r", (int) (~(this.TIME_INIT)));
         if (!XTools.strEmpty(this.passticket)) {
@@ -86,16 +87,17 @@ class WeChatApi {
         return rspInit;
     }
 
-    public RspStatusNotify webwxstatusnotify(String MyName) {
+    //消息已读接口
+    RspStatusNotify webwxstatusnotify(String MyName) {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxstatusnotify", host));
         if (!XTools.strEmpty(this.passticket)) {
             xUrl.param("pass_ticket", this.passticket);
         }
-        XBody body = XBody.type(XBody.JSON).param(WeChatTools.GSON.toJson(new ReqStatusNotify(new BaseRequest(uin, sid, skey), lastNotify == 0 ? 3 : 1, MyName)));
+        XBody body = XBody.type(XBody.JSON).param(WeChatTools.GSON.toJson(new ReqStatusNotify(new BaseRequest(uin, sid, skey), 3, MyName)));
         return WeChatTools.GSON.fromJson(WeChatTools.request(xUrl, body, "\\{"), RspStatusNotify.class);
     }
 
-    public RspGetContact webwxgetcontact() {
+    RspGetContact webwxgetcontact() {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxgetcontact", host));
         xUrl.param("r", System.currentTimeMillis());
         xUrl.param("seq", 0);
@@ -106,7 +108,8 @@ class WeChatApi {
         return WeChatTools.GSON.fromJson(WeChatTools.request(xUrl, null, "\\{"), RspGetContact.class);
     }
 
-    public RspBatchGetContact webwxbatchgetcontact(ArrayList<Contact> contactList) {
+    //获取群成员信息，不同之处在于该接口获取到的信息稍微详细点
+    RspBatchGetContact webwxbatchgetcontact(ArrayList<Contact> contactList) {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxbatchgetcontact", host));
         xUrl.param("r", System.currentTimeMillis());
         xUrl.param("type", "ex");
@@ -117,7 +120,7 @@ class WeChatApi {
         return WeChatTools.GSON.fromJson(WeChatTools.request(xUrl, body, "\\{"), RspBatchGetContact.class);
     }
 
-    public RspSyncCheck synccheck() {
+    RspSyncCheck synccheck() {
         XUrl xUrl = XUrl.base(String.format("https://webpush.%s/cgi-bin/mmwebwx-bin/synccheck", host));
         xUrl.param("uin", this.uin);
         xUrl.param("sid", this.sid);
@@ -129,7 +132,7 @@ class WeChatApi {
         return new RspSyncCheck(WeChatTools.request(xUrl, null, "\\{(.|\\s)+\\}"));
     }
 
-    public RspSync webwxsync() {
+    RspSync webwxsync() {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxsync", host));
         xUrl.param("sid", this.sid);
         xUrl.param("skey", this.skey);
@@ -143,7 +146,7 @@ class WeChatApi {
         return rspSync;
     }
 
-    public RspSendMsg webwxsendmsg(Msg msg) {
+    RspSendMsg webwxsendmsg(Msg msg) {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxsendmsg", host));
         if (!XTools.strEmpty(this.passticket)) {
             xUrl.param("pass_ticket", passticket);
