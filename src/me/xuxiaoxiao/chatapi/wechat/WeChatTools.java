@@ -11,6 +11,9 @@ import me.xuxiaoxiao.xtools.XTools;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+/**
+ * 模拟网页微信客户端工具类
+ */
 public class WeChatTools {
     public static final int TYPE_TEXT = 1;//文字
     public static final int TYPE_IMAGE = 3;//图片
@@ -29,29 +32,55 @@ public class WeChatTools {
     private WeChatTools() {
     }
 
+    /**
+     * 判断获取到的消息是否是群消息
+     *
+     * @param addMsg 获取到的消息
+     * @return 是否是群消息
+     */
     public static boolean isGroupMsg(AddMsg addMsg) {
         return addMsg.FromUserName.startsWith("@@");
     }
 
-    public static String textMsgSender(AddMsg addMsg) {
-        if (addMsg.AppMsgType == TYPE_TEXT && isGroupMsg(addMsg)) {
+    /**
+     * 获取到的消息的实际发送者
+     *
+     * @param addMsg 获取到的消息
+     * @return 消息的实际发送者的UserName
+     */
+    public static String msgSender(AddMsg addMsg) {
+        if (isGroupMsg(addMsg)) {
             return addMsg.Content.substring(0, addMsg.Content.indexOf(':'));
         } else {
             return addMsg.FromUserName;
         }
     }
 
-    public static String textMsgContent(AddMsg addMsg) {
-        if (addMsg.AppMsgType == TYPE_TEXT && isGroupMsg(addMsg)) {
-            return addMsg.Content.substring(addMsg.Content.indexOf("<br/>") + "<br/>".length());
+    /**
+     * 获取到的消息的实际内容
+     *
+     * @param addMsg 获取到的消息
+     * @return 消息的实际内容
+     */
+    public static String msgContent(AddMsg addMsg) {
+        if (isGroupMsg(addMsg)) {
+            return addMsg.Content.substring(addMsg.Content.indexOf(':') + ":<br/>".length());
         } else {
             return addMsg.Content;
         }
     }
 
+    /**
+     * 接口请求
+     *
+     * @param url   接口地址
+     * @param body  Post请求体
+     * @param regex 返回值需要满足的正则表达式
+     * @return 接口返回的字符串
+     */
     static String request(XUrl url, XBody body, String regex) {
-        for (int i = 0; i < 5; i++) {
-            String respStr = XHttpTools.request(new XHttpTools.XOption("utf-8", 60 * 1000, 60 * 1000), url, body).string();
+        for (int i = 0; i < 3; i++) {
+            String respStr = XHttpTools.request(new XHttpTools.XOption("utf-8", 90 * 1000, 90 * 1000), url, body).string();
             if (!XTools.strEmpty(respStr) && Pattern.compile(regex).matcher(respStr).find()) {
                 return respStr;
             }

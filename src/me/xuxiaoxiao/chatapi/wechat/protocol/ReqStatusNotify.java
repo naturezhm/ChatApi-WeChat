@@ -7,11 +7,11 @@ public class ReqStatusNotify {
     public String ToUserName;
     public long ClientMsgId;
 
-    public ReqStatusNotify(BaseRequest BaseRequest, int Code, String MyUserName) {
-        this.BaseRequest = BaseRequest;
-        this.Code = Code;
-        this.FromUserName = MyUserName;
-        this.ToUserName = MyUserName;
+    public ReqStatusNotify(BaseRequest baseRequest, int code, String myName) {
+        this.BaseRequest = baseRequest;
+        this.Code = code;
+        this.FromUserName = myName;
+        this.ToUserName = myName;
         this.ClientMsgId = System.currentTimeMillis();
     }
 }

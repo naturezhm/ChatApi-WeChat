@@ -6,10 +6,10 @@ public class BaseRequest {
     public final String Skey;
     public final String DeviceID;
 
-    public BaseRequest(String Uin, String Sid, String Skey) {
-        this.Uin = Uin;
-        this.Sid = Sid;
-        this.Skey = Skey;
+    public BaseRequest(String uin, String sid, String skey) {
+        this.Uin = uin;
+        this.Sid = sid;
+        this.Skey = skey;
         this.DeviceID = deviceId();
     }
 

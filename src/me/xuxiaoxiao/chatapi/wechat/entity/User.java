@@ -29,6 +29,7 @@ public class User implements Serializable, Cloneable {
     public ArrayList<User> MemberList;
     public int Statues;
     public long AttrStatus;
+    public long MemberStatus;
     public String Province;
     public String City;
     public String Alias;

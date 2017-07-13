@@ -1,7 +1,9 @@
 package me.xuxiaoxiao.chatapi.wechat;
 
 import me.xuxiaoxiao.chatapi.wechat.entity.AddMsg;
+import me.xuxiaoxiao.chatapi.wechat.entity.User;
 
+import java.io.File;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.util.logging.Level;
@@ -33,12 +35,32 @@ public class WeChatDemo {
         }
 
         @Override
-        public void onMessage(AddMsg addMsg) {
-            System.out.println("onMessage:" + addMsg.Content);
+        public void onMessageText(String msgId, User userWhere, User userFrom, String text) {
+            System.out.println("onMessage:" + text);
             //学习别人说话
-            if (addMsg.MsgType == WeChatTools.TYPE_TEXT && !WeChatTools.textMsgSender(addMsg).equals(wechatClient.me().UserName)) {
-                wechatClient.sendTextMsg(addMsg.FromUserName, WeChatTools.textMsgContent(addMsg));
+            if (!userFrom.UserName.equals(wechatClient.uMe().UserName)) {
+                wechatClient.mText(userWhere.UserName, text);
             }
+        }
+
+        @Override
+        public void onMessageImage(String msgId, User userWhere, User userFrom, File image) {
+        }
+
+        @Override
+        public void onMessageVoice(String msgId, User userWhere, User userFrom, File voice) {
+        }
+
+        @Override
+        public void onMessageCard(String msgId, User userWhere, User userFrom, String userName, String nick, int gender) {
+        }
+
+        @Override
+        public void onMessageVideo(String msgId, User userWhere, User userFrom, File thumbnail, File video) {
+        }
+
+        @Override
+        public void onMessageOther(String msgId, User userWhere, User userFrom) {
         }
 
         @Override
@@ -53,7 +75,7 @@ public class WeChatDemo {
         public void onLogout() {
             System.out.println("onLogout");
         }
-    }, cookieManager, Level.ALL);
+    }, cookieManager, null, Level.ALL);
 
     public static void main(String[] args) {
         CookieHandler.setDefault(cookieManager);

@@ -7,9 +7,9 @@ public class ReqSync {
     public final SyncKey SyncKey;
     public final int rr;
 
-    public ReqSync(BaseRequest BaseRequest, SyncKey SyncKey) {
-        this.BaseRequest = BaseRequest;
-        this.SyncKey = SyncKey;
+    public ReqSync(BaseRequest baseRequest, SyncKey syncKey) {
+        this.BaseRequest = baseRequest;
+        this.SyncKey = syncKey;
         this.rr = (int) (~(System.currentTimeMillis()));
     }
 }
