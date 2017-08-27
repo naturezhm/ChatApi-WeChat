@@ -4,8 +4,11 @@ import me.xuxiaoxiao.chatapi.wechat.entity.AddMsg;
 import me.xuxiaoxiao.chatapi.wechat.entity.User;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.logging.Level;
 
 public class WeChatDemo {
@@ -31,44 +34,51 @@ public class WeChatDemo {
         @Override
         public void onLogin() {
             System.out.println("onLogin");
-            System.out.println(String.format("您有%d名好友、关注%d个公众号、活跃微信群%d个", wechatClient.uFriends().size(), wechatClient.uPublics().size(), wechatClient.uChatrooms().size()));
+            System.out.println(String.format("您有%d名好友、关注%d个公众号、活跃微信群%d个", wechatClient.userFriends().size(), wechatClient.userPublics().size(), wechatClient.userChatrooms().size()));
         }
 
         @Override
         public void onMessageText(String msgId, User userWhere, User userFrom, String text) {
-            System.out.println("onMessage:" + text);
+            System.out.println("onMessageText:" + text);
             //学习别人说话
-            if (!userFrom.UserName.equals(wechatClient.uMe().UserName)) {
-                wechatClient.mText(userWhere.UserName, text);
+            if (!userFrom.UserName.equals(wechatClient.userMe().UserName)) {
+                wechatClient.sendText(userWhere.UserName, text);
             }
         }
 
         @Override
         public void onMessageImage(String msgId, User userWhere, User userFrom, File image) {
+            System.out.println("onMessageImage");
         }
 
         @Override
         public void onMessageVoice(String msgId, User userWhere, User userFrom, File voice) {
+            System.out.println("onMessageVoice");
         }
 
         @Override
         public void onMessageCard(String msgId, User userWhere, User userFrom, String userName, String nick, int gender) {
+            System.out.println("onMessageCard");
         }
 
         @Override
         public void onMessageVideo(String msgId, User userWhere, User userFrom, File thumbnail, File video) {
+            System.out.println("onMessageVideo");
         }
 
         @Override
         public void onMessageOther(String msgId, User userWhere, User userFrom) {
+            System.out.println("onMessageOther");
         }
 
         @Override
         public void onNotify(AddMsg addMsg) {
+            System.out.println("onNotify");
         }
 
         @Override
         public void onSystem(AddMsg addMsg) {
+            System.out.println("onSystem");
         }
 
         @Override
@@ -78,12 +88,83 @@ public class WeChatDemo {
     }, cookieManager, null, Level.ALL);
 
     public static void main(String[] args) {
+        //设置CookieManager
         CookieHandler.setDefault(cookieManager);
         //启动模拟微信客户端
         wechatClient.startup();
-        //查看模拟微信客户端是否正在运行
-        //wechatClient.isWorking();
-        //关闭模拟微信客户端
-        //wechatClient.shutdown();
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("请输入指令");
+            switch (scanner.nextLine()) {
+                case "sendText": {
+                    System.out.println("toUserName:");
+                    String toUserName = scanner.nextLine();
+                    System.out.println("textContent:");
+                    String text = scanner.nextLine();
+                    wechatClient.sendText(toUserName, text);
+                }
+                break;
+                case "sendImage": {
+                    try {
+                        System.out.println("toUserName:");
+                        String toUserName = scanner.nextLine();
+                        System.out.println("imagePath:");
+                        File image = new File(scanner.nextLine());
+                        wechatClient.sendImage(toUserName, image);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
+                case "applyVerify": {
+                    System.out.println("userName:");
+                    String userName = scanner.nextLine();
+                    System.out.println("verifyContent:");
+                    String verify = scanner.nextLine();
+                    wechatClient.applyVerify(userName, verify);
+                }
+                break;
+                case "editRemark": {
+                    System.out.println("userName:");
+                    String userName = scanner.nextLine();
+                    System.out.println("remarkName:");
+                    String remark = scanner.nextLine();
+                    wechatClient.editRemark(userName, remark);
+                }
+                break;
+                case "createChatroom": {
+                    System.out.println("topic:");
+                    String topic = scanner.nextLine();
+                    System.out.println("members,split by ',':");
+                    String members = scanner.nextLine();
+                    String chatroomName = wechatClient.createChatroom(topic, Arrays.asList(members.split(",")));
+                    System.out.println("create chatroom " + chatroomName);
+                }
+                break;
+                case "addChatroomMember": {
+                    System.out.println("chatRoomName:");
+                    String chatroomName = scanner.nextLine();
+                    System.out.println("members,split by ',':");
+                    String members = scanner.nextLine();
+                    wechatClient.addChatroomMember(chatroomName, Arrays.asList(members.split(",")));
+                }
+                break;
+                case "delChatroomMember": {
+                    System.out.println("chatRoomName:");
+                    String chatroomName = scanner.nextLine();
+                    System.out.println("members,split by ',':");
+                    String members = scanner.nextLine();
+                    wechatClient.delChatroomMember(chatroomName, Arrays.asList(members.split(",")));
+                }
+                break;
+                case "quit":
+                    System.out.println("logging out");
+                    wechatClient.shutdown();
+                    return;
+                default:
+                    System.out.println("未知指令");
+                    break;
+            }
+        }
     }
 }

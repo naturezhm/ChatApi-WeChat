@@ -118,10 +118,12 @@ final class WeChatContacts {
         contacts.put(clone.UserName, clone);
         if (clone.UserName.startsWith("@@")) {
             chatrooms.put(clone.UserName, clone);
+            StringBuilder members = new StringBuilder("\n");
             for (User member : clone.MemberList) {
+                members.append(String.format("%s：%s\n", member.NickName, member.UserName));
                 contacts.put(member.UserName, member);
             }
-            WeChatTools.LOGGER.info(String.format("获取到微信群：%s", clone.NickName));
+            WeChatTools.LOGGER.info(String.format("获取到微信群：%s，群成员：%s", clone.NickName, members));
         } else if (clone.VerifyFlag > 0) {
             publics.put(clone.UserName, clone);
             WeChatTools.LOGGER.info(String.format("获取到微信公众号：%s", clone.NickName));

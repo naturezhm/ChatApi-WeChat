@@ -1,6 +1,7 @@
 package me.xuxiaoxiao.chatapi.wechat.protocol;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ReqCreateChatroom {
     public BaseRequest BaseRequest;
@@ -8,7 +9,7 @@ public class ReqCreateChatroom {
     public int MemberCount;
     public ArrayList<Member> MemberList;
 
-    public ReqCreateChatroom(BaseRequest baseRequest, String topic, ArrayList<String> members) {
+    public ReqCreateChatroom(BaseRequest baseRequest, String topic, List<String> members) {
         this.BaseRequest = baseRequest;
         this.Topic = topic;
         this.MemberCount = members.size();

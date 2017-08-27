@@ -11,8 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -158,7 +158,7 @@ final class WeChatApi {
      * @param contactList 要获取的联系人列表
      * @return 联系人的详细信息
      */
-    RspBatchGetContact webwxbatchgetcontact(ArrayList<Contact> contactList) {
+    RspBatchGetContact webwxbatchgetcontact(List<Contact> contactList) {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxbatchgetcontact", host));
         xUrl.param("r", System.currentTimeMillis());
         xUrl.param("type", "ex");
@@ -239,7 +239,7 @@ final class WeChatApi {
      * 根据MsgId获取那条消息的图片
      *
      * @param msgId 消息ID
-     * @param type  图片的类型，slave：小图，big：大图，不传该参数则获取普通大小
+     * @param type  图片的类型，slave：小图，big：大图，不传该参数则默认获取大图
      * @return 获取到的图片文件
      */
     File webwxgetmsgimg(String msgId, String type) {
@@ -252,7 +252,7 @@ final class WeChatApi {
         if (!XTools.strEmpty(this.passticket)) {
             xUrl.param("pass_ticket", passticket);
         }
-        return XTools.http(xUrl).file(folder.getPath() + File.separator + String.format("%d-%d", System.currentTimeMillis(), (int) (1000 * Math.random())));
+        return XTools.http(xUrl).file(folder.getAbsolutePath() + File.separator + String.format("%d-%d", System.currentTimeMillis(), (int) (1000 * Math.random())));
     }
 
     /**
@@ -326,7 +326,7 @@ final class WeChatApi {
      * @param memberList 成员的UserName
      * @return 创建的结果
      */
-    RspCreateChatroom webwxcreatechatroom(String topic, ArrayList<String> memberList) {
+    RspCreateChatroom webwxcreatechatroom(String topic, List<String> memberList) {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxcreatechatroom", host)).param("r", System.currentTimeMillis());
         if (!XTools.strEmpty(this.passticket)) {
             xUrl.param("pass_ticket", passticket);
@@ -343,7 +343,7 @@ final class WeChatApi {
      * @param memberList 成员列表
      * @return 添加或移除的结果
      */
-    RspUpdateChatroom webwxupdatechartroom(String chatroom, String fun, ArrayList<String> memberList) {
+    RspUpdateChatroom webwxupdatechartroom(String chatroom, String fun, List<String> memberList) {
         XUrl xUrl = XUrl.base(String.format("https://%s/cgi-bin/mmwebwx-bin/webwxupdatechatroom", host)).param("fun", fun);
         if (!XTools.strEmpty(this.passticket)) {
             xUrl.param("pass_ticket", passticket);

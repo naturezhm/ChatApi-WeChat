@@ -13,6 +13,7 @@ import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -43,7 +44,7 @@ public final class WeChatClient {
      *
      * @param contacts 要获取的联系人的列表
      */
-    private void loadContacts(ArrayList<Contact> contacts) {
+    private void loadContacts(List<Contact> contacts) {
         RspBatchGetContact rspBatchGetContact = wxAPI.webwxbatchgetcontact(contacts);
         for (User user : rspBatchGetContact.ContactList) {
             wxContacts.addContact(user);
@@ -78,7 +79,7 @@ public final class WeChatClient {
      *
      * @return 当前登录的用户信息
      */
-    public User uMe() {
+    public User userMe() {
         return wxContacts.getMe();
     }
 
@@ -88,7 +89,7 @@ public final class WeChatClient {
      * @param userName 好友的UserName
      * @return 好友的信息
      */
-    public User uFriend(String userName) {
+    public User userFriend(String userName) {
         return wxContacts.getFriend(userName);
     }
 
@@ -97,7 +98,7 @@ public final class WeChatClient {
      *
      * @return 用户好友列表
      */
-    public ArrayList<User> uFriends() {
+    public ArrayList<User> userFriends() {
         return wxContacts.getFriends();
     }
 
@@ -107,7 +108,7 @@ public final class WeChatClient {
      * @param userName 公众号的UserName
      * @return 公众号的信息
      */
-    public User uPublic(String userName) {
+    public User userPublic(String userName) {
         return wxContacts.getPublic(userName);
     }
 
@@ -116,7 +117,7 @@ public final class WeChatClient {
      *
      * @return 公众号列表
      */
-    public ArrayList<User> uPublics() {
+    public ArrayList<User> userPublics() {
         return wxContacts.getPublics();
     }
 
@@ -126,7 +127,7 @@ public final class WeChatClient {
      * @param userName 聊天室UserName
      * @return 聊天室信息
      */
-    public User uChatroom(String userName) {
+    public User userChatroom(String userName) {
         return wxContacts.getChatroom(userName);
     }
 
@@ -135,7 +136,7 @@ public final class WeChatClient {
      *
      * @return 聊天室列表
      */
-    public ArrayList<User> uChatrooms() {
+    public ArrayList<User> userChatrooms() {
         return wxContacts.getChatrooms();
     }
 
@@ -145,7 +146,7 @@ public final class WeChatClient {
      * @param userName 联系人UserName
      * @return 联系人信息
      */
-    public User uContact(String userName) {
+    public User userContact(String userName) {
         return wxContacts.getContact(userName);
     }
 
@@ -155,7 +156,7 @@ public final class WeChatClient {
      * @param toUserName 目标用户的UserName
      * @param text       文字内容
      */
-    public void mText(String toUserName, String text) {
+    public void sendText(String toUserName, String text) {
         WeChatTools.LOGGER.info(String.format("正在向%s发送消息：%s", toUserName, text));
         wxAPI.webwxsendmsg(new Msg(WeChatTools.TYPE_TEXT, null, text, wxContacts.getMe().UserName, toUserName));
     }
@@ -167,32 +168,53 @@ public final class WeChatClient {
      * @param image      图片文件
      * @throws IOException 文件IO异常
      */
-    public void mImage(String toUserName, File image) throws IOException {
+    public void sendImage(String toUserName, File image) throws IOException {
         WeChatTools.LOGGER.info(String.format("正在向%s发送图片", toUserName));
         RspUploadMedia rspUploadMedia = wxAPI.webwxuploadmedia(wxContacts.getMe().UserName, toUserName, image, "pic");
         wxAPI.webwxsendmsgimg(new Msg(WeChatTools.TYPE_IMAGE, rspUploadMedia.MediaId, "", wxContacts.getMe().UserName, toUserName));
     }
 
     /**
+     * 根据消息ID和图片类型获取图片
+     *
+     * @param msgId 消息ID
+     * @param type  图片类型，slave：小图，big：大图，null：普通尺寸
+     * @return 图片文件
+     */
+    public File fetchImage(String msgId, String type) {
+        if (XTools.strEmpty(type)) {
+            return wxAPI.webwxgetmsgimg(msgId, type);
+        } else {
+            switch (type) {
+                case "slave":
+                case "big":
+                    return wxAPI.webwxgetmsgimg(msgId, type);
+                default:
+                    return wxAPI.webwxgetmsgimg(msgId, null);
+            }
+        }
+    }
+
+    /**
      * 发送好友申请
      *
-     * @param userName      目标用户UserName
-     * @param verifyContent 验证消息
+     * @param userName 目标用户UserName
+     * @param verify   验证消息
      */
-    public void oUserVerify(String userName, String verifyContent) {
-        WeChatTools.LOGGER.info(String.format("正在向%s发送好友申请：%s", userName, verifyContent));
-        wxAPI.webwxverifyuser(userName, verifyContent);
+    public void applyVerify(String userName, String verify) {
+        WeChatTools.LOGGER.info(String.format("正在向%s发送好友申请：%s", userName, verify));
+        wxAPI.webwxverifyuser(userName, verify);
     }
 
     /**
      * 修改用户备注名
      *
-     * @param userName   目标用户UserName
-     * @param remarkName 备注名称
+     * @param userName 目标用户UserName
+     * @param remark   备注名称
      */
-    public void oUserRemark(String userName, String remarkName) {
-        WeChatTools.LOGGER.info(String.format("正在修改%s的备注：%s", userName, remarkName));
-        wxAPI.webwxoplog(userName, remarkName);
+    public void editRemark(String userName, String remark) {
+        WeChatTools.LOGGER.info(String.format("正在修改%s的备注：%s", userName, remark));
+        wxAPI.webwxoplog(userName, remark);
     }
 
     /**
@@ -202,7 +224,7 @@ public final class WeChatClient {
      * @param memberList 成员列表
      * @return 聊天室的UserName
      */
-    public String oChatRoomCreate(String topic, ArrayList<String> memberList) {
+    public String createChatroom(String topic, List<String> memberList) {
         WeChatTools.LOGGER.info(String.format("正在创建讨论组：%s，成员有：%s", topic, memberList));
         return wxAPI.webwxcreatechatroom(topic, memberList).ChatRoomName;
     }
@@ -210,23 +232,23 @@ public final class WeChatClient {
     /**
      * 添加聊天室的成员
      *
-     * @param chatRoom 聊天室的UserName
-     * @param users    要添加的人员的UserName，必须是自己的好友
+     * @param chatRoomName 聊天室的UserName
+     * @param users        要添加的人员的UserName，必须是自己的好友
      */
-    public void oChatRoomAdd(String chatRoom, ArrayList<String> users) {
+    public void addChatroomMember(String chatRoomName, List<String> users) {
         WeChatTools.LOGGER.info(String.format("正在添加讨论组成员：%s", users));
-        wxAPI.webwxupdatechartroom(chatRoom, "addmember", users);
+        wxAPI.webwxupdatechartroom(chatRoomName, "addmember", users);
     }
 
     /**
      * 移除聊天室的成员
      *
-     * @param chatRoom 聊天室的UserName
-     * @param users    要移除的人员的UserName，必须是聊天室的成员，而且自己是管理员
+     * @param chatRoomName 聊天室的UserName
+     * @param users        要移除的人员的UserName，必须是聊天室的成员，而且自己是管理员
      */
-    public void oChatRoomDel(String chatRoom, ArrayList<String> users) {
+    public void delChatroomMember(String chatRoomName, List<String> users) {
         WeChatTools.LOGGER.info(String.format("正在删除讨论组成员：%s", users));
-        wxAPI.webwxupdatechartroom(chatRoom, "delmember", users);
+        wxAPI.webwxupdatechartroom(chatRoomName, "delmember", users);
     }
 
     /**
@@ -455,7 +477,7 @@ public final class WeChatClient {
          */
         private String listen() {
             try {
-                wxAPI.webwxstatusnotify(uMe().UserName);
+                wxAPI.webwxstatusnotify(userMe().UserName);
                 while (!isInterrupted()) {
                     RspSyncCheck rspSyncCheck = wxAPI.synccheck();
                     if (rspSyncCheck.retcode > 0) {
@@ -484,7 +506,7 @@ public final class WeChatClient {
                                         wxListener.onMessageText(addMsg.MsgId, wxContacts.getContact(addMsg.FromUserName), wxContacts.getContact(WeChatTools.msgSender(addMsg)), WeChatTools.msgContent(addMsg));
                                         break;
                                     case WeChatTools.TYPE_IMAGE:
-                                        wxListener.onMessageImage(addMsg.MsgId, wxContacts.getContact(addMsg.FromUserName), wxContacts.getContact(WeChatTools.msgSender(addMsg)), wxAPI.webwxgetmsgimg(addMsg.MsgId, null));
+                                        wxListener.onMessageImage(addMsg.MsgId, wxContacts.getContact(addMsg.FromUserName), wxContacts.getContact(WeChatTools.msgSender(addMsg)), wxAPI.webwxgetmsgimg(addMsg.MsgId, "slave"));
                                         break;
                                     case WeChatTools.TYPE_VOICE:
                                         wxListener.onMessageVoice(addMsg.MsgId, wxContacts.getContact(addMsg.FromUserName), wxContacts.getContact(WeChatTools.msgSender(addMsg)), wxAPI.webwxgetvoice(addMsg.MsgId));

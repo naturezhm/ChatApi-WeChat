@@ -1,13 +1,13 @@
 package me.xuxiaoxiao.chatapi.wechat.protocol;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class ReqBatchGetContact {
     public final BaseRequest BaseRequest;
     public final int Count;
-    public final ArrayList<Contact> List;
+    public final List<Contact> List;
 
-    public ReqBatchGetContact(BaseRequest baseRequest, ArrayList<Contact> contacts) {
+    public ReqBatchGetContact(BaseRequest baseRequest, List<Contact> contacts) {
         this.BaseRequest = baseRequest;
         this.Count = contacts.size();
         this.List = contacts;
