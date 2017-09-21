@@ -18,6 +18,7 @@ public class WeChatTools {
     public static final int TYPE_TEXT = 1;//文字
     public static final int TYPE_IMAGE = 3;//图片
     public static final int TYPE_VOICE = 34;//语音
+    public static final int TYPE_VERIFY = 37;//好友请求
     public static final int TYPE_CARD = 42;//名片
     public static final int TYPE_VIDEO = 43;//视频
     public static final int TYPE_FACE = 47;//收藏的表情
@@ -82,6 +83,7 @@ public class WeChatTools {
         for (int i = 0; i < 3; i++) {
             String respStr = XHttpTools.request(new XHttpTools.XOption("utf-8", 90 * 1000, 90 * 1000), url, body).string();
             if (!XTools.strEmpty(respStr) && Pattern.compile(regex).matcher(respStr).find()) {
+                WeChatTools.LOGGER.finest(String.format("请求接口：\n%s，返回数据：\n%s", url.toString(), respStr));
                 return respStr;
             }
         }

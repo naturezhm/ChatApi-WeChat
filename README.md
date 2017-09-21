@@ -12,11 +12,13 @@
     * 监听文字、图像、语音、视频、文件、系统提示等消息
     * 发送文字和图像消息
     * 发送好友申请
+    * 同意好友申请
     * 修改好友备注
+    * 创建微信群
     * 添加和移除群成员
 
-## 接下来的功能
-* 健壮性加强
+## 测试数据
+* 最长在线时间7天
 
 ## 如何使用
 * 首先下载必要的依赖，[gson](https://github.com/google/gson)和[xtools-common](https://github.com/xuxiaoxiao-xxx/XTools-Common)
@@ -68,13 +70,18 @@ public class WeChatDemo {
         }
         
         @Override
-        public void onMessageCard(String msgId, User userWhere, User userFrom, String userName, String nick, int gender) {
-            System.out.println("onMessageCard");
+        public void onMessageVideo(String msgId, User userWhere, User userFrom, File thumbnail, File video) {
+            System.out.println("onMessageVideo");
         }
         
         @Override
-        public void onMessageVideo(String msgId, User userWhere, User userFrom, File thumbnail, File video) {
-            System.out.println("onMessageVideo");
+        public void onMessageCard(String msgId, User userWhere, User userFrom, AddMsg.RecommendInfo recommendInfo) {
+            System.out.println(String.format("onMessageCard：%s", WeChatTools.GSON.toJson(recommendInfo)));
+        }
+        
+        @Override
+        public void onMessageVerify(String msgId, User userWhere, User userFrom, AddMsg.RecommendInfo recommendInfo) {
+            System.out.println(String.format("onMessageVerify：%s", WeChatTools.GSON.toJson(recommendInfo)));
         }
         
         @Override
@@ -93,10 +100,15 @@ public class WeChatDemo {
         }
         
         @Override
+        public void onUnknown(AddMsg addMsg) {
+            System.out.println("onUnknown");
+        }
+        
+        @Override
         public void onLogout() {
             System.out.println("onLogout");
         }
-    }, cookieManager, null, Level.ALL);
+    }, cookieManager, null, null);
     
     public static void main(String[] args) {
         //设置CookieManager
@@ -127,12 +139,20 @@ public class WeChatDemo {
                     }
                 }
                 break;
-                case "applyVerify": {
+                case "sendVerify": {
                     System.out.println("userName:");
                     String userName = scanner.nextLine();
                     System.out.println("verifyContent:");
-                    String verify = scanner.nextLine();
-                    wechatClient.applyVerify(userName, verify);
+                    String verifyContent = scanner.nextLine();
+                    wechatClient.sendVerify(userName, verifyContent);
+                }
+                break;
+                case "passVerify": {
+                    System.out.println("userName:");
+                    String userName = scanner.nextLine();
+                    System.out.println("verifyTicket:");
+                    String verifyTicket = scanner.nextLine();
+                    wechatClient.passVerify(userName, verifyTicket);
                 }
                 break;
                 case "editRemark": {

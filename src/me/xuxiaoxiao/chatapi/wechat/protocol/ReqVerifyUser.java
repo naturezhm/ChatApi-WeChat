@@ -12,12 +12,12 @@ public class ReqVerifyUser {
     public ArrayList<Integer> SceneList;
     public String skey;
 
-    public ReqVerifyUser(BaseRequest baseRequest, String userName, String verifyContent) {
+    public ReqVerifyUser(BaseRequest baseRequest, int opCode, String userName, String verifyTicket, String verifyContent) {
         this.BaseRequest = baseRequest;
-        this.Opcode = 2;
+        this.Opcode = opCode;
         this.VerifyUserListSize = 1;
         this.VerifyUserList = new ArrayList<>();
-        this.VerifyUserList.add(new VerifyUser(userName));
+        this.VerifyUserList.add(new VerifyUser(userName, verifyTicket));
         this.VerifyContent = verifyContent;
         this.SceneListCount = 1;
         this.SceneList = new ArrayList<>();
@@ -29,8 +29,9 @@ public class ReqVerifyUser {
         public String Value;
         public String VerifyUserTicket = "";
 
-        public VerifyUser(String value) {
+        public VerifyUser(String value, String ticket) {
             this.Value = value;
+            this.VerifyUserTicket = ticket;
         }
     }
 }

@@ -21,7 +21,7 @@ final class WeChatContacts {
      * @return 自身信息
      */
     User getMe() {
-        return me.clone();
+        return this.me;
     }
 
     /**
@@ -30,10 +30,9 @@ final class WeChatContacts {
      * @param me 自身信息
      */
     void setMe(User me) {
-        User clone = me.clone();
-        this.me = clone;
-        this.contacts.put(me.UserName, clone);
-        WeChatTools.LOGGER.info(String.format("获取到自身信息：%s", WeChatTools.GSON.toJson(clone)));
+        this.me = me;
+        this.contacts.put(me.UserName, me);
+        WeChatTools.LOGGER.finer(String.format("获取到自身信息：%s", WeChatTools.GSON.toJson(me)));
     }
 
     /**
@@ -43,8 +42,7 @@ final class WeChatContacts {
      * @return 好友信息
      */
     User getFriend(String UserName) {
-        User uFriend = this.friends.get(UserName);
-        return uFriend != null ? uFriend.clone() : null;
+        return this.friends.get(UserName);
     }
 
     /**
@@ -55,7 +53,7 @@ final class WeChatContacts {
     ArrayList<User> getFriends() {
         ArrayList<User> friendList = new ArrayList<>();
         for (String key : friends.keySet()) {
-            friendList.add(friends.get(key).clone());
+            friendList.add(friends.get(key));
         }
         return friendList;
     }
@@ -67,8 +65,7 @@ final class WeChatContacts {
      * @return 公众号信息
      */
     User getPublic(String UserName) {
-        User uPublic = this.publics.get(UserName);
-        return uPublic != null ? uPublic.clone() : null;
+        return this.publics.get(UserName);
     }
 
     /**
@@ -79,7 +76,7 @@ final class WeChatContacts {
     ArrayList<User> getPublics() {
         ArrayList<User> publicList = new ArrayList<>();
         for (String key : publics.keySet()) {
-            publicList.add(publics.get(key).clone());
+            publicList.add(publics.get(key));
         }
         return publicList;
     }
@@ -91,8 +88,7 @@ final class WeChatContacts {
      * @return 聊天室信息
      */
     User getChatroom(String UserName) {
-        User uChatroom = this.chatrooms.get(UserName);
-        return uChatroom != null ? uChatroom.clone() : null;
+        return this.chatrooms.get(UserName);
     }
 
     /**
@@ -103,7 +99,7 @@ final class WeChatContacts {
     ArrayList<User> getChatrooms() {
         ArrayList<User> chatroomList = new ArrayList<>();
         for (String key : chatrooms.keySet()) {
-            chatroomList.add(chatrooms.get(key).clone());
+            chatroomList.add(chatrooms.get(key));
         }
         return chatroomList;
     }
@@ -114,22 +110,21 @@ final class WeChatContacts {
      * @param contact 联系人信息
      */
     void addContact(User contact) {
-        User clone = contact.clone();
-        contacts.put(clone.UserName, clone);
-        if (clone.UserName.startsWith("@@")) {
-            chatrooms.put(clone.UserName, clone);
+        contacts.put(contact.UserName, contact);
+        if (contact.UserName.startsWith("@@")) {
+            chatrooms.put(contact.UserName, contact);
             StringBuilder members = new StringBuilder("\n");
-            for (User member : clone.MemberList) {
-                members.append(String.format("%s：%s\n", member.NickName, member.UserName));
+            for (User member : contact.MemberList) {
+                members.append(String.format("%s（%s）\n", member.NickName, member.UserName));
                 contacts.put(member.UserName, member);
             }
-            WeChatTools.LOGGER.info(String.format("获取到微信群：%s，群成员：%s", clone.NickName, members));
-        } else if (clone.VerifyFlag > 0) {
-            publics.put(clone.UserName, clone);
-            WeChatTools.LOGGER.info(String.format("获取到微信公众号：%s", clone.NickName));
-        } else if (clone.ContactFlag > 0) {
-            friends.put(clone.UserName, clone);
-            WeChatTools.LOGGER.info(String.format("获取到微信好友：%s,%s", clone.NickName, clone.UserName));
+            WeChatTools.LOGGER.finer(String.format("获取到微信群：%s（%s），群成员：%s", contact.NickName, contact.UserName, members));
+        } else if (contact.VerifyFlag > 0) {
+            publics.put(contact.UserName, contact);
+            WeChatTools.LOGGER.finer(String.format("获取到微信公众号：%s（%s）", contact.NickName, contact.UserName));
+        } else if (contact.ContactFlag > 0) {
+            friends.put(contact.UserName, contact);
+            WeChatTools.LOGGER.finer(String.format("获取到微信好友：%s（%s）", contact.NickName, contact.UserName));
         }
     }
 
@@ -141,22 +136,17 @@ final class WeChatContacts {
      */
     User getContact(String UserName) {
         if (UserName.startsWith("@@")) {
-            User uChatroom = getChatroom(UserName);
-            if (uChatroom != null) {
-                return uChatroom;
+            if (this.chatrooms.containsKey(UserName)) {
+                return this.chatrooms.get(UserName);
             }
         } else {
-            User uFriend = getFriend(UserName);
-            if (uFriend != null) {
-                return uFriend;
-            }
-            User uPublic = getPublic(UserName);
-            if (uPublic != null) {
-                return uPublic;
+            if (this.friends.containsKey(UserName)) {
+                return this.friends.get(UserName);
+            } else if (this.publics.containsKey(UserName)) {
+                return this.publics.get(UserName);
             }
         }
-        User uContact = this.contacts.get(UserName);
-        return uContact != null ? uContact.clone() : null;
+        return this.contacts.get(UserName);
     }
 
     /**
